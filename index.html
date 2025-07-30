@@ -24,346 +24,377 @@
 </head>
 <body class="bg-gray-50 font-sans">
     <div id="app" class="min-h-screen flex flex-col">
-        <!-- Header -->
-        <header class="bg-blue-600 text-white shadow-md">
-            <div class="container mx-auto px-4 py-3 flex justify-between items-center">
-                <h1 class="text-xl font-bold">Suivi Visites Médicales</h1>
-                <nav class="hidden md:flex space-x-4">
-                    <button @click="currentView = 'home'" class="px-3 py-1 rounded hover:bg-blue-700 transition">Accueil</button>
-                    <button @click="currentView = 'history'" class="px-3 py-1 rounded hover:bg-blue-700 transition">Historique</button>
-                    <button @click="currentView = 'stock'" class="px-3 py-1 rounded hover:bg-blue-700 transition">Stock</button>
-                    <button @click="currentView = 'stats'" class="px-3 py-1 rounded hover:bg-blue-700 transition">Statistiques</button>
-                </nav>
-                <button @click="toggleMenu" class="md:hidden text-white">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-                    </svg>
-                </button>
-            </div>
-            <!-- Mobile menu -->
-            <div v-if="showMobileMenu" class="md:hidden bg-blue-700 px-4 py-2">
-                <button @click="currentView = 'home'" class="block w-full text-left px-3 py-2 rounded hover:bg-blue-600 transition">Accueil</button>
-                <button @click="currentView = 'history'" class="block w-full text-left px-3 py-2 rounded hover:bg-blue-600 transition">Historique</button>
-                <button @click="currentView = 'stock'" class="block w-full text-left px-3 py-2 rounded hover:bg-blue-600 transition">Stock</button>
-                <button @click="currentView = 'stats'" class="block w-full text-left px-3 py-2 rounded hover:bg-blue-600 transition">Statistiques</button>
-            </div>
-        </header>
-
-        <!-- Main Content -->
-        <main class="flex-grow container mx-auto px-4 py-6">
-            <!-- Home View -->
-            <transition name="fade" mode="out-in">
-                <div v-if="currentView === 'home'" key="home" class="text-center">
-                    <h2 class="text-2xl font-semibold text-gray-800 mb-6">Bienvenue</h2>
-                    <p class="text-gray-600 mb-8">Enregistrez vos visites médicales et suivez votre activité professionnelle.</p>
-                    <button @click="currentView = 'newVisit'" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-full shadow-lg transition transform hover:scale-105">
-                        Nouvelle Visite
+        <!-- Login Screen -->
+        <div v-if="!authenticated" class="min-h-screen flex items-center justify-center">
+            <div class="max-w-md w-full bg-white p-8 rounded-lg shadow-md">
+                <h2 class="text-2xl font-bold text-center text-gray-800 mb-8">Connexion</h2>
+                <form @submit.prevent="login" class="space-y-6">
+                    <div>
+                        <label for="username" class="block text-gray-700 text-sm font-bold mb-2">Nom d'utilisateur</label>
+                        <input type="text" id="username" v-model="loginForm.username" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label for="password" class="block text-gray-700 text-sm font-bold mb-2">Mot de passe</label>
+                        <input type="password" id="password" v-model="loginForm.password" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div v-if="loginError" class="text-red-500 text-sm">
+                        Nom d'utilisateur ou mot de passe incorrect.
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
+                        Se connecter
                     </button>
-                    
-                    <div class="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div class="bg-white p-6 rounded-lg shadow">
-                            <h3 class="text-lg font-medium text-gray-800 mb-2">Visites aujourd'hui</h3>
-                            <p class="text-3xl font-bold text-blue-600">{{ visitsToday }}</p>
-                        </div>
-                        <div class="bg-white p-6 rounded-lg shadow">
-                            <h3 class="text-lg font-medium text-gray-800 mb-2">Échantillons restants</h3>
-                            <p class="text-3xl font-bold text-blue-600">{{ totalStock }}</p>
-                        </div>
-                        <div class="bg-white p-6 rounded-lg shadow">
-                            <h3 class="text-lg font-medium text-gray-800 mb-2">Dernière visite</h3>
-                            <p class="text-lg text-gray-600" v-if="lastVisit">{{ formatDate(lastVisit.date) }} - {{ lastVisit.clientName }}</p>
-                            <p class="text-lg text-gray-600" v-else>Aucune visite</p>
-                        </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- App Content (Shown when authenticated) -->
+        <div v-if="authenticated">
+            <!-- Header -->
+            <header class="bg-blue-600 text-white shadow-md">
+                <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+                    <div class="flex items-center">
+                        <h1 class="text-xl font-bold">Suivi Visites Médicales</h1>
+                        <span class="ml-4 text-sm bg-blue-800 px-2 py-1 rounded">Connecté en tant que {{ currentUser }}</span>
                     </div>
+                    <nav class="hidden md:flex space-x-4">
+                        <button @click="currentView = 'home'" class="px-3 py-1 rounded hover:bg-blue-700 transition">Accueil</button>
+                        <button @click="currentView = 'history'" class="px-3 py-1 rounded hover:bg-blue-700 transition">Historique</button>
+                        <button @click="currentView = 'stock'" class="px-3 py-1 rounded hover:bg-blue-700 transition">Stock</button>
+                        <button @click="currentView = 'stats'" class="px-3 py-1 rounded hover:bg-blue-700 transition">Statistiques</button>
+                        <button @click="logout" class="px-3 py-1 rounded hover:bg-blue-700 transition">Déconnexion</button>
+                    </nav>
+                    <button @click="toggleMenu" class="md:hidden text-white">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
                 </div>
-            </transition>
-
-            <!-- New Visit Form -->
-            <transition name="slide" mode="out-in">
-                <div v-if="currentView === 'newVisit'" key="newVisit" class="max-w-md mx-auto bg-white p-6 rounded-lg shadow-md">
-                    <h2 class="text-2xl font-semibold text-gray-800 mb-6">Nouvelle Visite</h2>
-                    
-                    <form @submit.prevent="saveVisit" class="space-y-4">
-                        <div>
-                            <label for="date" class="block text-sm font-medium text-gray-700">Date</label>
-                            <input type="date" id="date" v-model="newVisit.date" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                        </div>
-                        
-                        <div>
-                            <label for="clientName" class="block text-sm font-medium text-gray-700">Nom du client</label>
-                            <input type="text" id="clientName" v-model="newVisit.clientName" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                        </div>
-                        
-                        <div>
-                            <label for="clientType" class="block text-sm font-medium text-gray-700">Type de client</label>
-                            <select id="clientType" v-model="newVisit.clientType" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                                <option value="">Sélectionnez un type</option>
-                                <option value="Médecin">Médecin</option>
-                                <option value="Pharmacie">Pharmacie</option>
-                                <option value="Parapharmacie">Parapharmacie</option>
-                                <option value="Grossiste">Grossiste</option>
-                            </select>
-                        </div>
-                        
-                        <div class="space-y-2">
-                            <label class="block text-sm font-medium text-gray-700">Échantillons donnés</label>
-                            
-                            <div class="flex items-center justify-between">
-                                <span class="text-sm text-gray-600">Crèmes</span>
-                                <div class="flex items-center space-x-2">
-                                    <button type="button" @click="decrement('cream')" class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center hover:bg-gray-300">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
-                                        </svg>
-                                    </button>
-                                    <span class="w-8 text-center">{{ newVisit.cream }}</span>
-                                    <button type="button" @click="increment('cream')" class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center hover:bg-gray-300">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                                        </svg>
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            <div class="flex items-center justify-between">
-                                <span class="text-sm text-gray-600">Lotions</span>
-                                <div class="flex items-center space-x-2">
-                                    <button type="button" @click="decrement('lotion')" class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center hover:bg-gray-300">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
-                                        </svg>
-                                    </button>
-                                    <span class="w-8 text-center">{{ newVisit.lotion }}</span>
-                                    <button type="button" @click="increment('lotion')" class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center hover:bg-gray-300">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                                        </svg>
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            <div class="flex items-center justify-between">
-                                <span class="text-sm text-gray-600">Sérums</span>
-                                <div class="flex items-center space-x-2">
-                                    <button type="button" @click="decrement('serum')" class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center hover:bg-gray-300">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
-                                        </svg>
-                                    </button>
-                                    <span class="w-8 text-center">{{ newVisit.serum }}</span>
-                                    <button type="button" @click="increment('serum')" class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center hover:bg-gray-300">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                                        </svg>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div>
-                            <label for="notes" class="block text-sm font-medium text-gray-700">Remarques</label>
-                            <textarea id="notes" v-model="newVisit.notes" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"></textarea>
-                        </div>
-                        
-                        <div class="flex justify-end space-x-3 pt-4">
-                            <button type="button" @click="currentView = 'home'" class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                                Annuler
-                            </button>
-                            <button type="submit" class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                                Enregistrer
-                            </button>
-                        </div>
-                    </form>
+                <!-- Mobile menu -->
+                <div v-if="showMobileMenu" class="md:hidden bg-blue-700 px-4 py-2">
+                    <button @click="currentView = 'home'" class="block w-full text-left px-3 py-2 rounded hover:bg-blue-600 transition">Accueil</button>
+                    <button @click="currentView = 'history'" class="block w-full text-left px-3 py-2 rounded hover:bg-blue-600 transition">Historique</button>
+                    <button @click="currentView = 'stock'" class="block w-full text-left px-3 py-2 rounded hover:bg-blue-600 transition">Stock</button>
+                    <button @click="currentView = 'stats'" class="block w-full text-left px-3 py-2 rounded hover:bg-blue-600 transition">Statistiques</button>
+                    <button @click="logout" class="block w-full text-left px-3 py-2 rounded hover:bg-blue-600 transition">Déconnexion</button>
                 </div>
-            </transition>
+            </header>
 
-            <!-- Stock Management -->
-            <transition name="fade" mode="out-in">
-                <div v-if="currentView === 'stock'" key="stock" class="max-w-2xl mx-auto">
-                    <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-2xl font-semibold text-gray-800">Gestion du Stock</h2>
-                        <button @click="updateStock" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">
-                            Mettre à jour le stock
+            <!-- Main Content -->
+            <main class="flex-grow container mx-auto px-4 py-6">
+                <!-- Home View -->
+                <transition name="fade" mode="out-in">
+                    <div v-if="currentView === 'home'" key="home" class="text-center">
+                        <h2 class="text-2xl font-semibold text-gray-800 mb-6">Bienvenue, {{ currentUser }}</h2>
+                        <p class="text-gray-600 mb-8">Enregistrez vos visites médicales et suivez votre activité professionnelle.</p>
+                        <button @click="currentView = 'newVisit'" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-full shadow-lg transition transform hover:scale-105">
+                            Nouvelle Visite
                         </button>
-                    </div>
-                    
-                    <div class="bg-white rounded-lg shadow overflow-hidden">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Échantillon</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantité</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Crèmes</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ stock.cream }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span :class="{'bg-green-100 text-green-800': stock.cream > 10, 'bg-yellow-100 text-yellow-800': stock.cream > 0 && stock.cream <= 10, 'bg-red-100 text-red-800': stock.cream === 0}" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full">
-                                            {{ stock.cream > 10 ? 'Disponible' : stock.cream > 0 ? 'Stock faible' : 'Épuisé' }}
-                                        </span>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Lotions</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ stock.lotion }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span :class="{'bg-green-100 text-green-800': stock.lotion > 10, 'bg-yellow-100 text-yellow-800': stock.lotion > 0 && stock.lotion <= 10, 'bg-red-100 text-red-800': stock.lotion === 0}" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full">
-                                            {{ stock.lotion > 10 ? 'Disponible' : stock.lotion > 0 ? 'Stock faible' : 'Épuisé' }}
-                                        </span>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Sérums</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ stock.serum }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span :class="{'bg-green-100 text-green-800': stock.serum > 10, 'bg-yellow-100 text-yellow-800': stock.serum > 0 && stock.serum <= 10, 'bg-red-100 text-red-800': stock.serum === 0}" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full">
-                                            {{ stock.serum > 10 ? 'Disponible' : stock.serum > 0 ? 'Stock faible' : 'Épuisé' }}
-                                        </span>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    
-                    <div class="mt-8 bg-white p-6 rounded-lg shadow">
-                        <h3 class="text-lg font-medium text-gray-800 mb-4">Ajouter du stock</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
-                                <label for="addCream" class="block text-sm font-medium text-gray-700">Crèmes</label>
-                                <input type="number" id="addCream" v-model.number="stockToAdd.cream" min="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        
+                        <div class="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div class="bg-white p-6 rounded-lg shadow">
+                                <h3 class="text-lg font-medium text-gray-800 mb-2">Visites aujourd'hui</h3>
+                                <p class="text-3xl font-bold text-blue-600">{{ visitsToday }}</p>
                             </div>
-                            <div>
-                                <label for="addLotion" class="block text-sm font-medium text-gray-700">Lotions</label>
-                                <input type="number" id="addLotion" v-model.number="stockToAdd.lotion" min="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            <div class="bg-white p-6 rounded-lg shadow">
+                                <h3 class="text-lg font-medium text-gray-800 mb-2">Échantillons restants</h3>
+                                <p class="text-3xl font-bold text-blue-600">{{ totalStock }}</p>
                             </div>
-                            <div>
-                                <label for="addSerum" class="block text-sm font-medium text-gray-700">Sérums</label>
-                                <input type="number" id="addSerum" v-model.number="stockToAdd.serum" min="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            <div class="bg-white p-6 rounded-lg shadow">
+                                <h3 class="text-lg font-medium text-gray-800 mb-2">Dernière visite</h3>
+                                <p class="text-lg text-gray-600" v-if="lastVisit">{{ formatDate(lastVisit.date) }} - {{ lastVisit.clientName }}</p>
+                                <p class="text-lg text-gray-600" v-else>Aucune visite</p>
                             </div>
                         </div>
                     </div>
-                </div>
-            </transition>
+                </transition>
 
-            <!-- Visit History -->
-            <transition name="fade" mode="out-in">
-                <div v-if="currentView === 'history'" key="history" class="max-w-6xl mx-auto">
-                    <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-2xl font-semibold text-gray-800">Historique des Visites</h2>
-                        <button @click="exportToCSV" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">
-                            Exporter les données
-                        </button>
-                    </div>
-                    
-                    <div class="mb-6 bg-white p-4 rounded-lg shadow">
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- New Visit Form -->
+                <transition name="slide" mode="out-in">
+                    <div v-if="currentView === 'newVisit'" key="newVisit" class="max-w-md mx-auto bg-white p-6 rounded-lg shadow-md">
+                        <h2 class="text-2xl font-semibold text-gray-800 mb-6">Nouvelle Visite</h2>
+                        
+                        <form @submit.prevent="saveVisit" class="space-y-4">
                             <div>
-                                <label for="filterDate" class="block text-sm font-medium text-gray-700">Date</label>
-                                <input type="date" id="filterDate" v-model="filterDate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                <label for="date" class="block text-sm font-medium text-gray-700">Date</label>
+                                <input type="date" id="date" v-model="newVisit.date" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                             </div>
+                            
                             <div>
-                                <label for="filterClientType" class="block text-sm font-medium text-gray-700">Type de client</label>
-                                <select id="filterClientType" v-model="filterClientType" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                                    <option value="">Tous les types</option>
+                                <label for="clientName" class="block text-sm font-medium text-gray-700">Nom du client</label>
+                                <input type="text" id="clientName" v-model="newVisit.clientName" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            </div>
+                            
+                            <div>
+                                <label for="clientType" class="block text-sm font-medium text-gray-700">Type de client</label>
+                                <select id="clientType" v-model="newVisit.clientType" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                    <option value="">Sélectionnez un type</option>
                                     <option value="Médecin">Médecin</option>
                                     <option value="Pharmacie">Pharmacie</option>
                                     <option value="Parapharmacie">Parapharmacie</option>
                                     <option value="Grossiste">Grossiste</option>
                                 </select>
                             </div>
+                            
+                            <div class="space-y-2">
+                                <label class="block text-sm font-medium text-gray-700">Échantillons donnés</label>
+                                
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm text-gray-600">Crèmes</span>
+                                    <div class="flex items-center space-x-2">
+                                        <button type="button" @click="decrement('cream')" class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center hover:bg-gray-300">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
+                                            </svg>
+                                        </button>
+                                        <span class="w-8 text-center">{{ newVisit.cream }}</span>
+                                        <button type="button" @click="increment('cream')" class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center hover:bg-gray-300">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm text-gray-600">Lotions</span>
+                                    <div class="flex items-center space-x-2">
+                                        <button type="button" @click="decrement('lotion')" class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center hover:bg-gray-300">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
+                                            </svg>
+                                        </button>
+                                        <span class="w-8 text-center">{{ newVisit.lotion }}</span>
+                                        <button type="button" @click="increment('lotion')" class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center hover:bg-gray-300">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm text-gray-600">Sérums</span>
+                                    <div class="flex items-center space-x-2">
+                                        <button type="button" @click="decrement('serum')" class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center hover:bg-gray-300">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
+                                            </svg>
+                                        </button>
+                                        <span class="w-8 text-center">{{ newVisit.serum }}</span>
+                                        <button type="button" @click="increment('serum')" class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center hover:bg-gray-300">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
                             <div>
-                                <label for="searchClient" class="block text-sm font-medium text-gray-700">Recherche par nom</label>
-                                <input type="text" id="searchClient" v-model="searchClient" placeholder="Nom du client" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                <label for="notes" class="block text-sm font-medium text-gray-700">Remarques</label>
+                                <textarea id="notes" v-model="newVisit.notes" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"></textarea>
+                            </div>
+                            
+                            <div class="flex justify-end space-x-3 pt-4">
+                                <button type="button" @click="currentView = 'home'" class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                    Annuler
+                                </button>
+                                <button type="submit" class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                    Enregistrer
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </transition>
+
+                <!-- Stock Management -->
+                <transition name="fade" mode="out-in">
+                    <div v-if="currentView === 'stock'" key="stock" class="max-w-2xl mx-auto">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-2xl font-semibold text-gray-800">Gestion du Stock</h2>
+                            <button @click="updateStock" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">
+                                Mettre à jour le stock
+                            </button>
+                        </div>
+                        
+                        <div class="bg-white rounded-lg shadow overflow-hidden">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Échantillon</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantité</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    <tr>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Crèmes</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ stock.cream }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span :class="{'bg-green-100 text-green-800': stock.cream > 10, 'bg-yellow-100 text-yellow-800': stock.cream > 0 && stock.cream <= 10, 'bg-red-100 text-red-800': stock.cream === 0}" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full">
+                                                {{ stock.cream > 10 ? 'Disponible' : stock.cream > 0 ? 'Stock faible' : 'Épuisé' }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Lotions</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ stock.lotion }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span :class="{'bg-green-100 text-green-800': stock.lotion > 10, 'bg-yellow-100 text-yellow-800': stock.lotion > 0 && stock.lotion <= 10, 'bg-red-100 text-red-800': stock.lotion === 0}" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full">
+                                                {{ stock.lotion > 10 ? 'Disponible' : stock.lotion > 0 ? 'Stock faible' : 'Épuisé' }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Sérums</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ stock.serum }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span :class="{'bg-green-100 text-green-800': stock.serum > 10, 'bg-yellow-100 text-yellow-800': stock.serum > 0 && stock.serum <= 10, 'bg-red-100 text-red-800': stock.serum === 0}" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full">
+                                                {{ stock.serum > 10 ? 'Disponible' : stock.serum > 0 ? 'Stock faible' : 'Épuisé' }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="mt-8 bg-white p-6 rounded-lg shadow">
+                            <h3 class="text-lg font-medium text-gray-800 mb-4">Ajouter du stock</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label for="addCream" class="block text-sm font-medium text-gray-700">Crèmes</label>
+                                    <input type="number" id="addCream" v-model.number="stockToAdd.cream" min="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                </div>
+                                <div>
+                                    <label for="addLotion" class="block text-sm font-medium text-gray-700">Lotions</label>
+                                    <input type="number" id="addLotion" v-model.number="stockToAdd.lotion" min="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                </div>
+                                <div>
+                                    <label for="addSerum" class="block text-sm font-medium text-gray-700">Sérums</label>
+                                    <input type="number" id="addSerum" v-model.number="stockToAdd.serum" min="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                </div>
                             </div>
                         </div>
                     </div>
-                    
-                    <div class="bg-white rounded-lg shadow overflow-hidden">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Échantillons</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Remarques</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                <tr v-for="visit in filteredVisits" :key="visit.id" class="hover:bg-gray-50">
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ formatDate(visit.date) }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ visit.clientName }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ visit.clientType }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        <span v-if="visit.cream > 0" class="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded mr-1">{{ visit.cream }} Crème(s)</span>
-                                        <span v-if="visit.lotion > 0" class="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded mr-1">{{ visit.lotion }} Lotion(s)</span>
-                                        <span v-if="visit.serum > 0" class="inline-block bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded">{{ visit.serum }} Sérum(s)</span>
-                                    </td>
-                                    <td class="px-6 py-4 text-sm text-gray-500">{{ visit.notes || '-' }}</td>
-                                </tr>
-                                <tr v-if="filteredVisits.length === 0">
-                                    <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">Aucune visite trouvée</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    
-                    <div class="mt-4 flex justify-between items-center">
-                        <div class="text-sm text-gray-500">
-                            Affichage de {{ filteredVisits.length }} visites sur {{ visits.length }}
-                        </div>
-                    </div>
-                </div>
-            </transition>
+                </transition>
 
-            <!-- Statistics -->
-            <transition name="fade" mode="out-in">
-                <div v-if="currentView === 'stats'" key="stats" class="max-w-6xl mx-auto">
-                    <h2 class="text-2xl font-semibold text-gray-800 mb-6">Statistiques</h2>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                        <div class="bg-white p-6 rounded-lg shadow">
-                            <h3 class="text-lg font-medium text-gray-800 mb-4">Visites par type de client</h3>
-                            <canvas id="clientTypeChart" class="w-full h-64"></canvas>
+                <!-- Visit History -->
+                <transition name="fade" mode="out-in">
+                    <div v-if="currentView === 'history'" key="history" class="max-w-6xl mx-auto">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-2xl font-semibold text-gray-800">Historique des Visites</h2>
+                            <button @click="exportToCSV" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">
+                                Exporter les données
+                            </button>
                         </div>
-                        <div class="bg-white p-6 rounded-lg shadow">
-                            <h3 class="text-lg font-medium text-gray-800 mb-4">Échantillons distribués</h3>
-                            <canvas id="samplesChart" class="w-full h-64"></canvas>
+                        
+                        <div class="mb-6 bg-white p-4 rounded-lg shadow">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label for="filterDate" class="block text-sm font-medium text-gray-700">Date</label>
+                                    <input type="date" id="filterDate" v-model="filterDate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                </div>
+                                <div>
+                                    <label for="filterClientType" class="block text-sm font-medium text-gray-700">Type de client</label>
+                                    <select id="filterClientType" v-model="filterClientType" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                        <option value="">Tous les types</option>
+                                        <option value="Médecin">Médecin</option>
+                                        <option value="Pharmacie">Pharmacie</option>
+                                        <option value="Parapharmacie">Parapharmacie</option>
+                                        <option value="Grossiste">Grossiste</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="searchClient" class="block text-sm font-medium text-gray-700">Recherche par nom</label>
+                                    <input type="text" id="searchClient" v-model="searchClient" placeholder="Nom du client" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white rounded-lg shadow overflow-hidden">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Échantillons</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Remarques</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    <tr v-for="visit in filteredVisits" :key="visit.id" class="hover:bg-gray-50">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ formatDate(visit.date) }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ visit.clientName }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ visit.clientType }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <span v-if="visit.cream > 0" class="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded mr-1">{{ visit.cream }} Crème(s)</span>
+                                            <span v-if="visit.lotion > 0" class="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded mr-1">{{ visit.lotion }} Lotion(s)</span>
+                                            <span v-if="visit.serum > 0" class="inline-block bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded">{{ visit.serum }} Sérum(s)</span>
+                                        </td>
+                                        <td class="px-6 py-4 text-sm text-gray-500">{{ visit.notes || '-' }}</td>
+                                    </tr>
+                                    <tr v-if="filteredVisits.length === 0">
+                                        <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">Aucune visite trouvée</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="mt-4 flex justify-between items-center">
+                            <div class="text-sm text-gray-500">
+                                Affichage de {{ filteredVisits.length }} visites sur {{ visits.length }}
+                            </div>
                         </div>
                     </div>
-                    
-                    <div class="bg-white p-6 rounded-lg shadow mb-8">
-                        <h3 class="text-lg font-medium text-gray-800 mb-4">Visites par jour (7 derniers jours)</h3>
-                        <canvas id="visitsChart" class="w-full h-64"></canvas>
-                    </div>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div class="bg-white p-6 rounded-lg shadow">
-                            <h3 class="text-lg font-medium text-gray-800 mb-2">Total visites</h3>
-                            <p class="text-3xl font-bold text-blue-600">{{ visits.length }}</p>
-                        </div>
-                        <div class="bg-white p-6 rounded-lg shadow">
-                            <h3 class="text-lg font-medium text-gray-800 mb-2">Crèmes données</h3>
-                            <p class="text-3xl font-bold text-blue-600">{{ totalSamples.cream }}</p>
-                        </div>
-                        <div class="bg-white p-6 rounded-lg shadow">
-                            <h3 class="text-lg font-medium text-gray-800 mb-2">Lotions données</h3>
-                            <p class="text-3xl font-bold text-blue-600">{{ totalSamples.lotion }}</p>
-                        </div>
-                    </div>
-                </div>
-            </transition>
-        </main>
+                </transition>
 
-        <!-- Footer -->
-        <footer class="bg-gray-100 border-t border-gray-200 py-4">
-            <div class="container mx-auto px-4 text-center text-sm text-gray-600">
-                <p>© 2023 Suivi Visites Médicales - Tous droits réservés</p>
-            </div>
-        </footer>
+                <!-- Statistics -->
+                <transition name="fade" mode="out-in">
+                    <div v-if="currentView === 'stats'" key="stats" class="max-w-6xl mx-auto">
+                        <h2 class="text-2xl font-semibold text-gray-800 mb-6">Statistiques</h2>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                            <div class="bg-white p-6 rounded-lg shadow">
+                                <h3 class="text-lg font-medium text-gray-800 mb-4">Visites par type de client</h3>
+                                <canvas id="clientTypeChart" class="w-full h-64"></canvas>
+                            </div>
+                            <div class="bg-white p-6 rounded-lg shadow">
+                                <h3 class="text-lg font-medium text-gray-800 mb-4">Échantillons distribués</h3>
+                                <canvas id="samplesChart" class="w-full h-64"></canvas>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white p-6 rounded-lg shadow mb-8">
+                            <h3 class="text-lg font-medium text-gray-800 mb-4">Visites par jour (7 derniers jours)</h3>
+                            <canvas id="visitsChart" class="w-full h-64"></canvas>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div class="bg-white p-6 rounded-lg shadow">
+                                <h3 class="text-lg font-medium text-gray-800 mb-2">Total visites</h3>
+                                <p class="text-3xl font-bold text-blue-600">{{ visits.length }}</p>
+                            </div>
+                            <div class="bg-white p-6 rounded-lg shadow">
+                                <h3 class="text-lg font-medium text-gray-800 mb-2">Crèmes données</h3>
+                                <p class="text-3xl font-bold text-blue-600">{{ totalSamples.cream }}</p>
+                            </div>
+                            <div class="bg-white p-6 rounded-lg shadow">
+                                <h3 class="text-lg font-medium text-gray-800 mb-2">Lotions données</h3>
+                                <p class="text-3xl font-bold text-blue-600">{{ totalSamples.lotion }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </transition>
+            </main>
+
+            <!-- Footer -->
+            <footer class="bg-gray-100 border-t border-gray-200 py-4">
+                <div class="container mx-auto px-4 text-center text-sm text-gray-600">
+                    <p>© 2023 Suivi Visites Médicales - Tous droits réservés</p>
+                </div>
+            </footer>
+        </div>
     </div>
 
     <script>
@@ -371,6 +402,13 @@
             const app = {
                 data() {
                     return {
+                        authenticated: false,
+                        currentUser: null,
+                        loginForm: {
+                            username: '',
+                            password: ''
+                        },
+                        loginError: false,
                         currentView: 'home',
                         showMobileMenu: false,
                         visits: [],
@@ -464,6 +502,35 @@
                     }
                 },
                 methods: {
+                    login() {
+                        // Valid users
+                        const validUsers = {
+                            'Ahmed': 'password',
+                            'Amina': 'password'
+                        };
+                        
+                        if (validUsers[this.loginForm.username] && 
+                            validUsers[this.loginForm.username] === this.loginForm.password) {
+                            this.authenticated = true;
+                            this.currentUser = this.loginForm.username;
+                            this.loginError = false;
+                            
+                            // Save session to localStorage
+                            localStorage.setItem('currentUser', this.currentUser);
+                            
+                            // Load user data
+                            this.loadData();
+                        } else {
+                            this.loginError = true;
+                        }
+                    },
+                    logout() {
+                        this.authenticated = false;
+                        this.currentUser = null;
+                        localStorage.removeItem('currentUser');
+                        this.loginForm.username = '';
+                        this.loginForm.password = '';
+                    },
                     toggleMenu() {
                         this.showMobileMenu = !this.showMobileMenu;
                     },
@@ -547,26 +614,38 @@
                         const url = URL.createObjectURL(blob);
                         const link = document.createElement('a');
                         link.href = url;
-                        link.setAttribute('download', `visites_medicales_${new Date().toISOString().split('T')[0]}.csv`);
+                        link.setAttribute('download', `visites_medicales_${this.currentUser}_${new Date().toISOString().split('T')[0]}.csv`);
                         document.body.appendChild(link);
                         link.click();
                         document.body.removeChild(link);
                     },
                     loadData() {
-                        const savedVisits = localStorage.getItem('medicalVisits');
-                        const savedStock = localStorage.getItem('medicalStock');
-                        
-                        if (savedVisits) {
-                            this.visits = JSON.parse(savedVisits);
-                        }
-                        
-                        if (savedStock) {
-                            this.stock = JSON.parse(savedStock);
+                        if (this.currentUser) {
+                            const savedVisits = localStorage.getItem(`medicalVisits_${this.currentUser}`);
+                            const savedStock = localStorage.getItem(`medicalStock_${this.currentUser}`);
+                            
+                            if (savedVisits) {
+                                this.visits = JSON.parse(savedVisits);
+                            } else {
+                                this.visits = [];
+                            }
+                            
+                            if (savedStock) {
+                                this.stock = JSON.parse(savedStock);
+                            } else {
+                                this.stock = {
+                                    cream: 50,
+                                    lotion: 50,
+                                    serum: 50
+                                };
+                            }
                         }
                     },
                     saveData() {
-                        localStorage.setItem('medicalVisits', JSON.stringify(this.visits));
-                        localStorage.setItem('medicalStock', JSON.stringify(this.stock));
+                        if (this.currentUser) {
+                            localStorage.setItem(`medicalVisits_${this.currentUser}`, JSON.stringify(this.visits));
+                            localStorage.setItem(`medicalStock_${this.currentUser}`, JSON.stringify(this.stock));
+                        }
                     },
                     initCharts() {
                         // Destroy existing charts if they exist
@@ -682,13 +761,19 @@
                     }
                 },
                 mounted() {
-                    this.loadData();
+                    // Check if user is already authenticated
+                    const savedUser = localStorage.getItem('currentUser');
+                    if (savedUser) {
+                        this.authenticated = true;
+                        this.currentUser = savedUser;
+                        this.loadData();
+                    }
                     
                     // Set today's date as default for new visits
                     this.newVisit.date = new Date().toISOString().split('T')[0];
                     
                     // Initialize charts if we're on the stats page
-                    if (this.currentView === 'stats') {
+                    if (this.currentView === 'stats' && this.authenticated) {
                         this.initCharts();
                     }
                 }
@@ -698,5 +783,5 @@
         });
     </script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-<p style="border-radius: 8px; text-align: center; font-size: 12px; color: #fff; margin-top: 16px;position: fixed; left: 8px; bottom: 8px; z-index: 10; background: rgba(0, 0, 0, 0.8); padding: 4px 8px;">Made with <img src="https://enzostvs-deepsite.hf.space/logo.svg" alt="DeepSite Logo" style="width: 16px; height: 16px; vertical-align: middle;display:inline-block;margin-right:3px;filter:brightness(0) invert(1);"><a href="https://enzostvs-deepsite.hf.space" style="color: #fff;text-decoration: underline;" target="_blank" >DeepSite</a> - 🧬 <a href="https://enzostvs-deepsite.hf.space?remix=TechSimpleService/webmedapp" style="color: #fff;text-decoration: underline;" target="_blank" >Remix</a></p></body>
+</body>
 </html>

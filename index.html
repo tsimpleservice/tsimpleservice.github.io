@@ -1,206 +1,79 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Suivi Visites du Délégué</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
-    <style>
-        .fade-enter-active, .fade-leave-active {
-            transition: opacity 0.3s;
-        }
-        .fade-enter, .fade-leave-to {
-            opacity: 0;
-        }
-        .slide-enter-active, .slide-leave-active {
-            transition: transform 0.3s;
-        }
-        .slide-enter, .slide-leave-to {
-            transform: translateX(100%);
-        }
-    </style>
-</head>
-<body class="bg-gray-50 font-sans">
-    <!-- [Previous login section remains unchanged] -->
+<!-- Home View -->
+<div v-if="currentView === 'home'" key="home" class="text-center">
+    <h2 class="text-2xl font-semibold text-gray-800 mb-6">Bienvenue {{ currentUser }} !</h2>
+    <p class="text-gray-600 mb-8">Enregistrez vos visites et suivez votre activité professionnelle.</p>
     
-    <!-- App Content (Shown when authenticated) -->
-    <div v-if="authenticated">
-        <!-- Header with updated title -->
-        <header class="bg-blue-600 text-white shadow-md">
-            <div class="container mx-auto px-4 py-3 flex justify-between items-center">
-                <div class="flex items-center">
-                    <h1 class="text-xl font-bold">Suivi Visites du Délégué</h1>
-                    <span class="ml-4 text-sm bg-blue-800 px-2 py-1 rounded">Connecté en tant que {{ currentUser }}</span>
+    <button @click="currentView = 'newVisit'" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-full shadow-lg transition transform hover:scale-105">
+        Nouvelle Visite
+    </button>
+    
+    <div class="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Today's Visits -->
+        <div class="bg-white p-6 rounded-lg shadow">
+            <h3 class="text-lg font-medium text-gray-800 mb-2">Visites aujourd'hui</h3>
+            <div v-if="todaysVisits.length > 0">
+                <div v-for="visit in todaysVisits" :key="visit.id" class="text-left mb-2 border-b pb-2">
+                    <p class="font-medium">{{ visit.clientName }}</p>
+                    <p class="text-sm text-gray-600">{{ visit.clientType }}</p>
                 </div>
-                <!-- [Rest of header remains unchanged] -->
             </div>
-        </header>
-
-        <!-- Main Content -->
-        <main class="flex-grow container mx-auto px-4 py-6">
-            <!-- Home View with updated content -->
-            <transition name="fade" mode="out-in">
-                <div v-if="currentView === 'home'" key="home" class="text-center">
-                    <h2 class="text-2xl font-semibold text-gray-800 mb-6">Bienvenue, {{ currentUser }}</h2>
-                    <p class="text-gray-600 mb-8">Enregistrez vos visites et suivez votre activité professionnelle.</p>
-                    
-                    <button @click="currentView = 'newVisit'" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-full shadow-lg transition transform hover:scale-105">
-                        Nouvelle Visite
-                    </button>
-                    
-                    <div class="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <!-- Today's Visits -->
-                        <div class="bg-white p-6 rounded-lg shadow">
-                            <h3 class="text-lg font-medium text-gray-800 mb-2">Visites aujourd'hui</h3>
-                            <div v-if="todaysVisits.length > 0">
-                                <div v-for="visit in todaysVisits" :key="visit.id" class="text-left mb-2 border-b pb-2">
-                                    <p class="font-medium">{{ visit.clientName }}</p>
-                                    <p class="text-sm text-gray-600">{{ visit.clientType }}</p>
-                                </div>
-                            </div>
-                            <p v-else class="text-gray-500">Aucune visite aujourd'hui</p>
-                        </div>
-                        
-                        <!-- This Week's Visits -->
-                        <div class="bg-white p-6 rounded-lg shadow">
-                            <h3 class="text-lg font-medium text-gray-800 mb-2">Visites cette semaine</h3>
-                            <div v-if="weeksVisits.length > 0">
-                                <div v-for="day in weeksVisits" :key="day.date" class="text-left mb-3">
-                                    <h4 class="font-medium">{{ formatDate(day.date) }}</h4>
-                                    <p v-for="visit in day.visits" :key="visit.id" class="text-sm ml-2">
-                                        - {{ visit.clientName }} ({{ visit.clientType }})
-                                    </p>
-                                </div>
-                            </div>
-                            <p v-else class="text-gray-500">Aucune visite cette semaine</p>
-                        </div>
-                        
-                        <!-- Stock Overview -->
-                        <div class="bg-white p-6 rounded-lg shadow">
-                            <h3 class="text-lg font-medium text-gray-800 mb-2">Échantillons restants</h3>
-                            <div class="text-left">
-                                <div class="flex justify-between mb-2">
-                                    <span>Crèmes:</span>
-                                    <span class="font-medium">{{ stock.cream }}</span>
-                                </div>
-                                <div class="flex justify-between mb-2">
-                                    <span>Lotions:</span>
-                                    <span class="font-medium">{{ stock.lotion }}</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span>Sérums:</span>
-                                    <span class="font-medium">{{ stock.serum }}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+            <p v-else class="text-gray-500">Aucune visite aujourd'hui</p>
+        </div>
+        
+        <!-- This Week's Visits -->
+        <div class="bg-white p-6 rounded-lg shadow">
+            <h3 class="text-lg font-medium text-gray-800 mb-2">Visites cette semaine</h3>
+            <div v-if="weeksVisits.length > 0">
+                <div v-for="day in weeksVisits" :key="day.date" class="text-left mb-3">
+                    <h4 class="font-medium">{{ formatDate(day.date) }}</h4>
+                    <p v-for="visit in day.visits" :key="visit.id" class="text-sm ml-2">
+                        - {{ visit.clientName }} ({{ visit.clientType }})
+                    </p>
                 </div>
-            </transition>
-
-            <!-- New Visit Form with added fields -->
-            <transition name="slide" mode="out-in">
-                <div v-if="currentView === 'newVisit'" key="newVisit" class="max-w-md mx-auto bg-white p-6 rounded-lg shadow-md">
-                    <h2 class="text-2xl font-semibold text-gray-800 mb-6">Nouvelle Visite</h2>
-                    
-                    <form @submit.prevent="saveVisit" class="space-y-4">
-                        <!-- [Previous form fields remain unchanged] -->
-                        
-                        <!-- New Address Field -->
-                        <div>
-                            <label for="address" class="block text-sm font-medium text-gray-700">Adresse</label>
-                            <input type="text" id="address" v-model="newVisit.address" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                        </div>
-                        
-                        <!-- New City Field -->
-                        <div>
-                            <label for="city" class="block text-sm font-medium text-gray-700">Ville</label>
-                            <input type="text" id="city" v-model="newVisit.city" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                        </div>
-                        
-                        <!-- [Rest of form remains unchanged] -->
-                    </form>
+            </div>
+            <p v-else class="text-gray-500">Aucune visite cette semaine</p>
+        </div>
+        
+        <!-- Stock Overview -->
+        <div class="bg-white p-6 rounded-lg shadow">
+            <h3 class="text-lg font-medium text-gray-800 mb-2">Échantillons restants</h3>
+            <div class="text-left">
+                <div class="flex justify-between mb-2">
+                    <span>Crèmes:</span>
+                    <span class="font-medium">{{ stock.cream }}</span>
                 </div>
-            </transition>
-
-            <!-- [Rest of the file remains unchanged] -->
-        </main>
+                <div class="flex justify-between mb-2">
+                    <span>Lotions:</span>
+                    <span class="font-medium">{{ stock.lotion }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>Sérums:</span>
+                    <span class="font-medium">{{ stock.serum }}</span>
+                </div>
+            </div>
+        </div>
     </div>
+</div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const app = {
-                data() {
-                    return {
-                        // [Previous data properties remain unchanged]
-                        newVisit: {
-                            date: new Date().toISOString().split('T')[0],
-                            clientName: '',
-                            clientType: '',
-                            address: '',
-                            city: '',
-                            cream: 0,
-                            lotion: 0,
-                            serum: 0,
-                            notes: ''
-                        },
-                        // [Rest of data remains unchanged]
-                    }
-                },
-                computed: {
-                    // New computed properties for visits display
-                    todaysVisits() {
-                        const today = new Date().toISOString().split('T')[0];
-                        return this.visits.filter(v => v.date === today);
-                    },
-                    weeksVisits() {
-                        const today = new Date();
-                        const weekStart = new Date(today);
-                        weekStart.setDate(today.getDate() - today.getDay());
-                        
-                        const days = [];
-                        for (let i = 0; i < 7; i++) {
-                            const date = new Date(weekStart);
-                            date.setDate(weekStart.getDate() + i);
-                            const dateStr = date.toISOString().split('T')[0];
-                            
-                            days.push({
-                                date: dateStr,
-                                visits: this.visits.filter(v => v.date === dateStr)
-                            });
-                        }
-                        return days.filter(day => day.visits.length > 0);
-                    },
-                    // [Rest of computed properties remain unchanged]
-                },
-                methods: {
-                    // [Previous methods remain unchanged]
-                    saveVisit() {
-                        // Updated to include new fields
-                        const visit = {
-                            id: Date.now(),
-                            date: this.newVisit.date,
-                            clientName: this.newVisit.clientName,
-                            clientType: this.newVisit.clientType,
-                            address: this.newVisit.address,
-                            city: this.newVisit.city,
-                            cream: this.newVisit.cream,
-                            lotion: this.newVisit.lotion,
-                            serum: this.newVisit.serum,
-                            notes: this.newVisit.notes
-                        };
-                        
-                        // [Rest of saveVisit method remains unchanged]
-                    },
-                    // [Rest of methods remain unchanged]
-                },
-                // [Rest of the Vue app configuration remains unchanged]
-            };
-            
-            Vue.createApp(app).mount('#app');
-        });
-    </script>
-    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-</body>
-</html>
+<!-- New Visit Form -->
+<div v-if="currentView === 'newVisit'" key="newVisit" class="max-w-md mx-auto bg-white p-6 rounded-lg shadow-md">
+    <h2 class="text-2xl font-semibold text-gray-800 mb-6">Nouvelle Visite</h2>
+    
+    <form @submit.prevent="saveVisit" class="space-y-4">
+        <!-- [Previous form fields] -->
+        
+        <!-- New Address Field -->
+        <div>
+            <label for="address" class="block text-sm font-medium text-gray-700">Adresse</label>
+            <input type="text" id="address" v-model="newVisit.address" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+        </div>
+        
+        <!-- New City Field -->
+        <div>
+            <label for="city" class="block text-sm font-medium text-gray-700">Ville</label>
+            <input type="text" id="city" v-model="newVisit.city" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+        </div>
+        
+        <!-- [Rest of form] -->
+    </form>
+</div>
